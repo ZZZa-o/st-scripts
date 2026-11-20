@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '0.22';
+  const VERSION = '0.24';
   const IDS = {
     STYLE: 'pts-sync-style',
     BTN: 'pts-sync-open-btn',
@@ -236,9 +236,10 @@
   let refs = {};
   let patchedParent = null;
   let patchedPrev = null;
+  let patchedChildren = [];
 
   const CSS_TEXT = `
-#${IDS.BTN}{display:inline-flex !important;align-items:center !important;justify-content:center !important;cursor:pointer;line-height:1;min-width:0 !important;flex-shrink:0 !important}
+#${IDS.BTN}{display:inline-flex !important;align-items:center !important;justify-content:center !important;cursor:pointer;line-height:1}
 #${IDS.BTN}::before{content:none !important;display:none !important}
 #${IDS.BTN} svg{width:1.12em;height:1.12em;display:block;pointer-events:none;flex-shrink:0}
 #${IDS.DIALOG}{
@@ -1121,16 +1122,30 @@
 
   const restorePatchedLayout = () => {
     if (patchedParent) {
-      patchedParent.style.removeProperty('display');
-      patchedParent.style.removeProperty('flex-wrap');
-      patchedParent.style.removeProperty('align-items');
-      patchedParent.style.removeProperty('gap');
+      ['display', 'flex-wrap', 'align-items', 'justify-content', 'flex', 'min-width', 'gap'].forEach((k) =>
+        patchedParent.style.removeProperty(k)
+      );
       patchedParent = null;
     }
     if (patchedPrev) {
-      patchedPrev.style.removeProperty('white-space');
-      patchedPrev.style.removeProperty('flex-shrink');
+      ['white-space', 'flex-shrink'].forEach((k) => patchedPrev.style.removeProperty(k));
       patchedPrev = null;
+    }
+    if (patchedChildren.length) {
+      patchedChildren.forEach((child) => {
+        [
+          'flex',
+          'min-width',
+          'width',
+          'max-width',
+          'padding-left',
+          'padding-right',
+          'margin-left',
+          'margin-right',
+          'text-align',
+        ].forEach((k) => child.style.removeProperty(k));
+      });
+      patchedChildren = [];
     }
   };
 
@@ -1173,8 +1188,26 @@
       parent.style.setProperty('display', 'flex', 'important');
       parent.style.setProperty('flex-wrap', 'nowrap', 'important');
       parent.style.setProperty('align-items', 'center', 'important');
-      parent.style.setProperty('gap', 'clamp(4px, 1.8vw, 12px)', 'important');
+      parent.style.setProperty('justify-content', 'flex-end', 'important');
+      parent.style.setProperty('flex', '1 1 0', 'important');
+      parent.style.setProperty('min-width', '0', 'important');
+      parent.style.setProperty('gap', '0', 'important');
       patchedParent = parent;
+
+      Array.from(parent.children).forEach((child) => {
+        if (!child.classList || !child.classList.contains('menu_button')) return;
+        child.style.setProperty('flex', '1 1 0', 'important');
+        child.style.setProperty('min-width', '0', 'important');
+        child.style.setProperty('width', 'auto', 'important');
+        child.style.setProperty('max-width', '40px', 'important');
+        child.style.setProperty('padding-left', '0', 'important');
+        child.style.setProperty('padding-right', '0', 'important');
+        child.style.setProperty('margin-left', '0', 'important');
+        child.style.setProperty('margin-right', '0', 'important');
+        child.style.setProperty('text-align', 'center', 'important');
+        patchedChildren.push(child);
+      });
+
       const prev = parent.previousElementSibling;
       if (prev && !prev.querySelector('select')) {
         prev.style.setProperty('white-space', 'nowrap', 'important');
