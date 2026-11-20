@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '0.3';
+  const VERSION = '0.22';
   const IDS = {
     STYLE: 'pts-sync-style',
     BTN: 'pts-sync-open-btn',
@@ -234,9 +234,11 @@
   let mountTimer = null;
   let dialogEl = null;
   let refs = {};
+  let patchedParent = null;
+  let patchedPrev = null;
 
   const CSS_TEXT = `
-#${IDS.BTN}{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;min-width:0;flex-shrink:0}
+#${IDS.BTN}{display:inline-flex !important;align-items:center !important;justify-content:center !important;cursor:pointer;line-height:1;min-width:0 !important;flex-shrink:0 !important}
 #${IDS.BTN}::before{content:none !important;display:none !important}
 #${IDS.BTN} svg{width:1.12em;height:1.12em;display:block;pointer-events:none;flex-shrink:0}
 #${IDS.DIALOG}{
@@ -1117,6 +1119,21 @@
     renderPvSection(true);
   };
 
+  const restorePatchedLayout = () => {
+    if (patchedParent) {
+      patchedParent.style.removeProperty('display');
+      patchedParent.style.removeProperty('flex-wrap');
+      patchedParent.style.removeProperty('align-items');
+      patchedParent.style.removeProperty('gap');
+      patchedParent = null;
+    }
+    if (patchedPrev) {
+      patchedPrev.style.removeProperty('white-space');
+      patchedPrev.style.removeProperty('flex-shrink');
+      patchedPrev = null;
+    }
+  };
+
   const mountPresetPanelButton = () => {
     if (topDoc.getElementById(IDS.BTN)) return true;
     const anchor =
@@ -1129,7 +1146,11 @@
 
     const btn = topDoc.createElement('div');
     btn.id = IDS.BTN;
-    btn.className = 'menu_button menu_button_icon fa-solid interactable';
+    const inherited = (anchor.className || 'menu_button menu_button_icon fa-solid')
+      .split(/\s+/)
+      .filter((c) => c && (c === 'fa-solid' || !c.startsWith('fa-')))
+      .join(' ');
+    btn.className = inherited || 'menu_button menu_button_icon fa-solid';
     btn.title = `预设开关同步 · 缝合 v${VERSION}`;
     btn.setAttribute('role', 'button');
     btn.setAttribute('tabindex', '0');
@@ -1149,13 +1170,24 @@
 
     const parent = anchor.parentElement;
     if (parent && !parent.querySelector('select')) {
-      parent.style.setProperty('flex-wrap', 'nowrap');
+      parent.style.setProperty('display', 'flex', 'important');
+      parent.style.setProperty('flex-wrap', 'nowrap', 'important');
+      parent.style.setProperty('align-items', 'center', 'important');
+      parent.style.setProperty('gap', 'clamp(4px, 1.8vw, 12px)', 'important');
+      patchedParent = parent;
+      const prev = parent.previousElementSibling;
+      if (prev && !prev.querySelector('select')) {
+        prev.style.setProperty('white-space', 'nowrap', 'important');
+        prev.style.setProperty('flex-shrink', '0', 'important');
+        patchedPrev = prev;
+      }
     }
     return true;
   };
 
   const cleanup = () => {
     closeModal();
+    restorePatchedLayout();
     if (mountTimer) {
       clearInterval(mountTimer);
       mountTimer = null;
