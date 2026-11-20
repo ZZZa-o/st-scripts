@@ -1,5 +1,5 @@
 (() => {
-  const VERSION = '0.2';
+  const VERSION = '0.3';
   const IDS = {
     STYLE: 'pts-sync-style',
     BTN: 'pts-sync-open-btn',
@@ -236,8 +236,9 @@
   let refs = {};
 
   const CSS_TEXT = `
-#${IDS.BTN}{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1}
-#${IDS.BTN} svg{width:1.05em;height:1.05em;display:block;pointer-events:none}
+#${IDS.BTN}{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;line-height:1;min-width:0;flex-shrink:0}
+#${IDS.BTN}::before{content:none !important;display:none !important}
+#${IDS.BTN} svg{width:1.12em;height:1.12em;display:block;pointer-events:none;flex-shrink:0}
 #${IDS.DIALOG}{
   --pts-solid-bg:var(--SmartThemeBlurTintColor,#fafafa);
   --pts-text:var(--SmartThemeBodyColor,#333333);
@@ -1128,7 +1129,7 @@
 
     const btn = topDoc.createElement('div');
     btn.id = IDS.BTN;
-    btn.className = 'menu_button menu_button_icon';
+    btn.className = 'menu_button menu_button_icon fa-solid interactable';
     btn.title = `预设开关同步 · 缝合 v${VERSION}`;
     btn.setAttribute('role', 'button');
     btn.setAttribute('tabindex', '0');
@@ -1145,6 +1146,11 @@
       }
     };
     anchor.insertAdjacentElement('afterend', btn);
+
+    const parent = anchor.parentElement;
+    if (parent && !parent.querySelector('select')) {
+      parent.style.setProperty('flex-wrap', 'nowrap');
+    }
     return true;
   };
 
